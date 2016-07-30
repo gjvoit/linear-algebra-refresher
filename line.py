@@ -1,8 +1,6 @@
 from decimal import Decimal, getcontext
 
-from vector import Vector
-
-import math
+from vectors import Vector
 
 getcontext().prec = 30
 
@@ -25,6 +23,12 @@ class Line(object):
 
         self.set_basepoint()
 
+    def is_parallel_to(self, ell):
+        # n1 and n2 are Vectors
+        n1 = self.normal_vector
+        n2 = ell.normal_vector
+
+        return n1.is_parallel_to(n2)
 
     def set_basepoint(self):
         try:
@@ -44,6 +48,15 @@ class Line(object):
             else:
                 raise e
 
+    def __eq__(self, ell):
+
+        if not self.is_parallel_to(ell):
+            return False
+        x0 = self.basepoint
+        y0 = ell.basepoint
+        basepoint_difference = x0.minus(y0)
+        n = self.normal_vector
+        return basepoint_difference.is_orthogonal_to(n)
 
     def __str__(self):
 
@@ -99,27 +112,24 @@ class Line(object):
         raise Exception(Line.NO_NONZERO_ELTS_FOUND_MSG)
 
     def intersection(self, l):
-        if self.normal_vector.parallel(l.normal_vector):
-            if Decimal(self.constant_term - l.constant_term).is_near_zero:
-                return "These lines have infinitely many intersections."
-            else:
-                return "These lines are parallel and do not intersect."
-        else:
-            A = self.normal_vector[0]
-            B = self.normal_vector[1]
-            C = l.normal_vector[0]
-            D = l.normal_vector[1]
+        try:
+            A, B = self.normal_vector
+            C, D = l.normal_vector
             k_1 = self.constant_term
             k_2 = l.constant_term
             x = ((D * k_1) - (B * k_2)) / ((A * D) - (B * C))
             y = ((-C * k_1) + (A * k_2)) / ((A * D) - (B * C))
             return Vector([x,y])
-
+        except ZeroDivisionError:
+            if self == l:
+                return self
+            else:
+                return None
 
 class MyDecimal(Decimal):
     def is_near_zero(self, eps=1e-10):
         return abs(self) < eps
 
-l1 = Line([4.046, 2.836], 1.21)
-l2 = Line([10.115, 7.09], 3.025)
-print l1.intersection(l2)
+ell1 = Line(normal_vector=Vector(['4.046', '2.836']), constant_term='1.21')
+ell2 = Line(normal_vector=Vector(['10.115', '7.09']), constant_term='3.025')
+#print ell1.intersection(l2)
